@@ -1,0 +1,114 @@
+
+' Manual Tool Change THS
+'
+' Set &ToolName before this routine
+' Set &ToolRPM before this routine
+'
+' Workflow
+'	calc offsets and save to userVariables, save current location to userVariables
+' message - Tool Change Required, move to safe z and table home? YesNoCancel
+'   if yes message - home offset is X, Y, Z is it safe to continue? YesNoCancel
+'	Yes - jog to safe_z and home, then show keypad
+'	No - show keypad
+' message - Load tool TOOL_Name OkCancel
+' message - Set RPM - DO NOT START ROUTER YET!
+' message - Move to work zero and safe_z? YesNoCancel
+'	Yes - jog to 0,0,safe_z then show keypad
+'	No - show keypad
+' message - Set tool to new z zero. OkCancel
+'	Ok - jog to safe_z then jog to saved x,y
+' comment - Manual tool change complete, start router and continue
+' PAUSE
+
+MTC_ROUTINE:
+	&current_x = %(1)
+	&current_y = %(2)
+	&current_z = %(3)
+	&table_offset_x = &current_x - %(6)  
+	&table_offset_y = &current_y - %(7)
+
+	MSGBOX(Tool Change Required. Move to Safe Z height and goto table X home position? ,YesNoCancel,Tool Change)
+	if &msganswer = Cancel then GOSUB END_ROUTINE
+	if &msganswer = no then GOSUB SHOW_KEYPAD
+	if &msganswer = yes then GOSUB TABLE_X_HOME
+
+	MSGBOX(Load tool | &ToolName |, OkCancel, Load Tool)
+	if &msganswer = Cancel then GOSUB END_ROUTINE
+
+	MSGBOX(Set Router RPM to | &ToolRPM |, OkCancel, Set RPM)
+	if &msganswer = Cancel then GOSUB END_ROUTINE
+	MSGBOX(Do NOT start router yet!, Exclamation, WARNING)
+
+	MSGBOX(Move to work coordanate XY home?, YesNoCancel, Move to Work Coord)
+	if &msganswer = Cancel then GOSUB END_ROUTINE
+	if &msganswer = yes then GOSUB WORK_HOME
+	if &msganswer = no then GOSUB SHOW_KEYPAD
+
+	MSGBOX(Move bottom of tool to the Z zero level for Z zeroing procedure, OkCancel, Set Zero)
+	if &msganswer = Cancel then GOSUB END_ROUTINE
+	GOSUB SHOW_KEYPAD
+	MSGBOX(OK to store new Z zero height?, YesNo, Store Z Zero)
+	if &msganswer = Yes then GOSUB AUTO_STORE_Z
+	if &msganswer = No then GOSUB MANUAL_STORE_Z
+
+
+END_ROUTINE:
+	END
+
+
+
+
+
+TABLE_X_HOME:
+	'   PRINT "X = ", %(1), "Y =", %(2), "TX = ", %(6), "TY = ", %(7)
+	GOSUB SAFE_Z_MOVE
+	MSGBOX(Distance to X home &table_offset_x inches is it safe to move?, YesNo, Verify Move)
+	IF &msganswer = no THEN GOTO TABLE_X_HOME_NO
+	IF &msganswer = yes THEN GOTO TABLE_X_HOME_YES
+
+TABLE_X_HOME_NO:
+	MSGBOX(Manually move to tool change locationg, Information, Move to Tool Change)
+	GOSUB SHOW_KEYPAD
+	RETURN
+
+TABLE_X_HOME_YES:
+	JZ, &safe_z
+	JX, &table_offset_x
+	RETURN
+
+SAFE_Z_MOVE:
+	MSGBOX(Is Z height at a safe clearance move level?, YesNo, Verify Safe Z)
+	IF &msganswer = yes THEN &safe_z = %(3)
+	IF &msganswer = yes THEN RETURN
+	GOSUB SHOW_KEYPAD
+	GOTO SAFE_Z_MOVE
+
+
+WORK_HOME:
+	GOSUB SAFE_Z_MOVE
+	JZ, &safe_z
+	J2 0,0
+	RETURN
+
+AUTO_STORE_Z:
+	ZZ
+	JZ, &safe_z
+	RETURN
+
+MANUAL_STORE_Z:
+	MSGBOX(Manually set and save new Z Zero Height. Raise to safe Z after zeroing, Information, Set Z)
+	GOSUB SHOW_KEYPAD
+	RETURN
+
+SHOW_KEYPAD:
+	IF %(22) = 1 THEN GOTO PREVIEW_MODE_SK
+	SK
+	RETURN
+
+PREVIEW_MODE_SK:
+	MSGBOX(In Preview Mode SK not available, Information, No SK)
+	RETURN
+
+END_MTC:
+	RETURN
+
