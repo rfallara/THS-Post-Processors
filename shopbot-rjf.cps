@@ -10,7 +10,7 @@
   FORKID {866F31A2-119D-485c-B228-090CC89C9BE8}
 */
 
-description = "ShopBot OpenSBP";
+description = "Tampa Hackerspace ShopBot";
 vendor = "ShopBot Tools";
 vendorUrl = "http://www.shopbottools.com";
 legal = "Copyright (C) 2012-2021 by Autodesk, Inc.";
@@ -446,26 +446,26 @@ function onSection() {
 
             //RJF Custom Tool Change Call
             //Move to Tool Load Position
-			
+
             if (isFirstSection()) {
                 writeComment(' First operation, initial tool ' + tool.description + ' installed and zeroed?' + ' Spindle speed ' + getCurrentSpindleSpeed() + 'RPM?')
                 writeln('PAUSE')
             } else {
-            	if (hasParameter("operation:clearanceHeight_value")) {
-            		var clearanceHeight = getParameter("operation:clearanceHeight_value")
-            	} else if (hasParameter("operation:clearanceHeight")) {
-            		var clearanceHeight = getParameter("operation:clearanceHeight")
-            	}
-                
+                if (hasParameter("operation:clearanceHeight_value")) {
+                    var clearanceHeight = getParameter("operation:clearanceHeight_value")
+                } else if (hasParameter("operation:clearanceHeight")) {
+                    var clearanceHeight = getParameter("operation:clearanceHeight")
+                }
+
                 writeln('&clearanceHeight = ' + clearanceHeight)
                 writeln('&ToolName = "' + tool.description + '"')
-                writeln('&ToolRPM = "' + getCurrentSpindleSpeed() + '"' )
+                writeln('&ToolRPM = "' + getCurrentSpindleSpeed() + '"')
                 writeln('CN, 11')
                 writeln("' Tool change to " + tool.description + " complete. Continue?")
                 writeln('PAUSE')
             }
-			
-            
+
+
 
             /* RJF - NOT IN USE
             onCommand(COMMAND_STOP_SPINDLE);
